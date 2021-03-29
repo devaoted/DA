@@ -1,0 +1,24 @@
+\section{Тест производительности}
+
+Тесты производительности представляет из себя следующее: сортировку 1 миллиона входных данных с помощью реализованной сортировки подсчётом и\\$std::stable\_sort$. \\
+
+Моя реализация:
+\begin{alltt}
+    MacBook:solution vladislove$ ./a.out < test.txt > result.txt
+    input 6817 ms
+    sort 250 ms
+    output 502 ms
+\end{alltt}
+
+$std::stable\_sort$:
+\begin{alltt}
+    MacBook:solution vladislove$ ./a.out < test.txt > result.txt
+    input 6711 ms
+    sort 378 ms
+    output 496 ms
+\end{alltt}
+
+Как видно, сортировка подсчётом работает несколько быстрее. На этом тесте была продемонстрирована разница в ассимптотике между $O(n)$ и $O(\log_2n)$. 
+
+\pagebreak
+

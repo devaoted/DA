@@ -1,0 +1,9 @@
+.DS_Store
+.vscode
+MAI-da-master/
+report.aux
+report.f*
+report.log
+report.out
+report.s*
+a.out

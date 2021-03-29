@@ -1,0 +1,232 @@
+\section{Описание}
+Требуется написать реализацию алгоритма cортировки подсчётом. В качестве ключа выступают почтовые индексы.
+
+Как сказано в \cite{wikipedia_itmo_sort}: \enquote{Идея алгоритма состоит в предварительном подсчете количества элементов с различными ключами в исходном массиве и разделении результирующего массива на части соответствующей длины (будем называть их блоками). Затем при повторном проходе исходного массива каждый его элемент копируется в специально отведенный его ключу блок, в первую свободную ячейку. Это осуществляется с помощью массива индексов $P$, в котором хранятся индексы начала блоков для различных ключей. $P[key]$ — индекс в результирующем массиве, соответствующий первому элементу блока для ключа $key$.}.
+
+Алгоритм состоит из двух проходов по массиву $A$ размера $n$ и одного прохода по массиву $P$ размера $k$. Его трудоемкость, таким образом, равна $O(n+k)$. На практике сортировку подсчетом имеет смысл применять, если $k=O(n)$, поэтому можно считать время работы алгоритма равным $O(n)$.
+Как и в обычной сортировке подсчетом, требуется $O(n+k)$ дополнительной памяти — на хранение массива B размера n и массива $P$ размера $k$.
+
+\pagebreak
+
+\section{Исходный код}
+Разобьем процесс написания программы на несколько этапов
+
+\begin{enumerate}
+    \item Реализация необходимых новых типов (пара \enquote{ключ-значение} и вектор)
+    \item Реализация алгоритма сортировки подсчетом вектора пар по ключу по заданному разряду заданной длины
+    \item Реализация ввода-вывода
+    \item Реализация бенчмарка
+\end{enumerate}
+
+Так как все функции и типы шаблонные, то пара, вектор и сортировки будут находиться в заголовочных файлах $pair.hpp$, $vector.hpp$ и $sort.hpp$ соответственно.
+Начнем с реализации пары и вектора:
+
+Структура $TPair$ для хранения пар \enquote{ключ-значение}:
+\begin{lstlisting}[language=C++]
+    #pragma once
+
+    #include <iostream>
+    
+    struct TPair {
+        uint32_t key;
+        char value[65];
+    };
+    
+    std::ostream& operator<<(std::ostream& output, const TPair& p) {
+        output.fill('0');
+        output.width(6);
+        output << p.key << '\t' << p.value;
+        return output;
+    }
+    
+    std::istream& operator>>(std::istream& input, TPair& p) {
+        input >> p.key >> p.value;
+        return input;
+    }
+\end{lstlisting}
+
+Шаблонный класс $TVector<T>$ для хранения пар \enquote{ключ-значение}:
+
+\begin{longtable}{|p{7.5cm}|p{7.5cm}|}
+\hline
+\rowcolor{lightgray}
+\multicolumn{2}{|c|} {vector.h}\\\hline
+TVector()&Конструктор по умолчанию\\\hline
+TVector(size\_t size, T\& value)&Конструктор от двух аргументов:\\ 
+&размер вектора и значения по умолчанию\\\hline
+TVector(const TVector\& other)&Конструктор копирования\\ 
+: TVector();&\\\hline
+TVector\& operator=(TVector other)&Оператор присваивания с копированием\\\hline
+~TVector()&Деструктор\\\hline
+size\_t Size() const&Размер вектора\\\hline
+void Swap(TVector\& lhs, TVector\& rhs)&Обмен векторов значениями\\\hline
+void PushBack(const T\& value)&Добавление элемента в конец\\\hline
+const T\& operator[](size\_t index) const&Получение константной ссылки на элемент по индексу\\\hline
+T\& operator[](size\_t index)&Получение ссылки на элемент по индексу\\\hline
+\end{longtable}
+
+\begin{lstlisting}[language=C++]
+    template <typename T> 
+    class TVector {
+    public:
+        TVector() {}
+        TVector(size_t size) {}
+        TVector(size_t size, uint64_t value) {}
+        TVector(const TVector& other) : TVector() {}
+        
+        size_t Size() const {}
+    
+        void PushBack(const T& value) {}
+    
+        const T& operator[](size_t index) const {}
+    
+        T& operator[](size_t index) {}
+    
+        void Swap(TVector& lhs, TVector& rhs) {}
+    
+        TVector& operator=(TVector other) {}
+    
+        ~TVector() {}
+    
+    private:
+        size_t size_;
+        size_t capacity_;
+        T* body_;
+    
+        void Swap(size_t& lhs, size_t& rhs) {}
+    };
+};
+\end{lstlisting}
+
+\newpage Теперь перейдём к реализации алгоритма сортировки подсчетом по ключу:
+
+\begin{lstlisting}[language=C++]
+    void CountingSort(TVector<TPair>& elems) {
+        uint32_t max = 0;
+        for (size_t i = 0; i < elems.Size(); ++i) {
+            max = std::max(max, elems[i].key);
+        }
+        
+        TVector<uint32_t> counters(max + 1, 0);
+        for (size_t i = 0; i < elems.Size(); ++i) {
+            ++counters[elems[i].key];
+        }
+        for (size_t i = 1; i < counters.Size(); ++i) {
+            counters[i] += counters[i - 1];
+        }
+       
+        TVector<TPair> result(elems.Size());
+        for (int i = elems.Size() - 1; i >= 0; --i) {
+            result[counters[elems[i].key] - 1].key = elems[i].key;
+            memcpy(result[counters[elems[i].key] - 1].value, elems[i].value, sizeof(elems[i].value));
+            --counters[elems[i].key];
+        }
+    
+        elems = result;
+    }
+\end{lstlisting}
+
+Обработка ввода-вывода в соответствии с описанием задания:
+
+\begin{lstlisting}[language=C++]
+    #include "pair.hpp"
+    #include "vector.hpp"
+    #include "sort.hpp"
+    
+    int main() {
+        std::ios_base::sync_with_stdio(false);
+        std::cin.tie(nullptr);
+    
+        TVector<TPair> v;
+        TPair pair;
+    
+        while (std::cin >> pair) {
+            v.PushBack(pair);
+        }
+    
+        CountingSort(v);
+        for (size_t i = 0; i < v.Size(); ++i) {
+            std::cout << v[i] << '\n';
+        }
+    
+        return 0;
+    }
+\end{lstlisting}
+
+Обработка ввода и бенчмарк:
+
+\begin{lstlisting}[language=C++]
+    #include "pair.hpp"
+#include "vector.hpp"
+#include "sort.hpp"
+
+#include <iostream>
+#include <cstdint>
+#include <chrono>
+#include <algorithm>
+
+bool operator<(const TPair& lhs, const TPair& rhs) {
+    return lhs.key < rhs.key;
+}
+
+int main() {
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    TVector<TPair> v;
+    TVector<TPair> a;
+    TPair pair;
+
+    auto start = std::chrono::steady_clock::now();
+    while (std::cin >> pair) {
+        v.PushBack(pair);
+    }
+    auto finish = std::chrono::steady_clock::now();
+    auto dur = finish - start;
+    std::cerr << "input" << ' ' << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count() << " ms" << std::endl;
+
+    start = std::chrono::steady_clock::now();
+    std::stable_sort(v.begin(), v.end());
+    //CountingSort(v);
+    finish = std::chrono::steady_clock::now();
+    dur = finish - start;
+    std::cerr << "sort" << ' ' << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count() << " ms" << std::endl;
+
+    start = std::chrono::steady_clock::now();
+    for (const auto& i : v) {
+        std::cout << i << '\n';
+    }
+    finish = std::chrono::steady_clock::now();
+    dur = finish - start;
+    std::cerr << "output" << ' ' << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count() << " ms" << std::endl;
+
+    return 0;
+}  
+\end{lstlisting}
+
+\pagebreak
+
+\section{Консоль}
+
+\begin{alltt}
+    MacBook:solution vladislove$ make
+    g++ -std=c++17 -pedantic -g -Wall -Wextra -Wno-unused-variable -c lab1.cpp -o lab1.o
+    g++ -std=c++17 -pedantic -g -Wall -Wextra -Wno-unused-variable lab1.o -o solution
+    MacBook:solution vladislove$ ./solution
+    543253 abc
+    000000 def
+    544253 abc
+    000000 zzz
+    101010 mmm
+    355555 zzz
+    702116 xyz
+    000000  def
+    000000  zzz
+    101010  mmm
+    355555  zzz
+    543253  abc
+    544253  abc
+    702116  xyz
+\end{alltt}
+
+\pagebreak
+
