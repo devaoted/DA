@@ -1,0 +1,110 @@
+\section{Описание}
+Алгоритм Ахо — Корасик — алгоритм поиска подстроки, разработанный Альфредом Ахо и Маргарет Корасик в 1975 году, 
+реализует поиск множества подстрок из словаря в данной строке. 
+Широко применяется в системном программном обеспечении, например, используется в утилите поиска grep.
+
+
+Описание кода: Считывается первая строка входных данных - образец, делится по джокерам на подобразцы, и составляется из
+ них trie. 
+В каждой вершине структуры содержатся: ссылки перехода в формате unordered\_map<Значение, ссылка на следующую вершину>, 
+суфиксная 
+ссылка, ссылка выхода, является ли вершина концом слова, позиции в главном образце, оканчивающихся в этой вершине 
+подобразцов, длина подобразца.
+После разбора всего образца, происходит <<прошивка>>  структуры, сначала <<прошиваются>> корень и следующие за ним 
+вершины,
+затем следующие уровни по очереди.
+Далее считывается весь текст в вектор <символ, <строка, позиция>> и отправляется на поиск.
+В котором создается вектор равный размеру текста и заполняется нулями, и при нахождении какого-либо образца в этом 
+веторе элемент под индексом [текущая позиция в тексте - позиция подобразца в образце] увеличивался на единицу.
+В итоге образец считается найденным в позиции i, если в масиве на позиции i, число равно количеству образцов.
+\pagebreak
+
+\section{Исходный код}
+
+\begin{longtable}{|p{10.5cm}|p{4.5cm}|}
+	\hline
+	\rowcolor{lightgray}
+	\multicolumn{2}{|c|} {trie.cpp}\\
+	\hline
+	TTrie::TTrie() & Конструктор по умол.\\
+	\hline
+	void TTrie::add(std::pair<std::vector<std::string>, size\_t>\& pat) & Добавление шаблона в trie\\
+	\hline
+	void TTrie::process(size\_t max) & Прошивка дерева\\
+	\hline
+	void TTrie::deleteTrie(TNode *node) & Очистка памяти\\
+	\hline
+	std::vector<std::pair<size\_t, size\_t>> TTrie::search(std::vector<std::pair<std::string, std::pair<size\_t, size\_t>>>\& text, size\_t patCount, size\_t patLen) & Алгоритм поиска подстроки\\
+	\hline
+	TTrie::~TTrie() & Деструктор\\
+	\hline
+\end{longtable}
+
+\begin{lstlisting}[language=C]
+	#pragma once
+	#include <iostream>
+	#include <string>
+	#include <unordered_map>
+	#include <utility>
+	#include <vector>
+	class TTrie;
+	class TNode {
+	public:
+		friend TTrie;
+		TNode() : failLink(nullptr), exitLink(nullptr), leaf(false) {}
+	private:
+		std::unordered_map<std::string, TNode*> childs;
+		TNode *failLink, *exitLink;
+		bool leaf;
+		size_t patSize;
+		std::vector<size_t> pos;
+	};
+	class TTrie {
+	public:
+		TTrie();
+		~TTrie();
+		void add(std::pair<std::vector<std::string>, size_t> &pat);
+		void process(size_t max);
+		std::vector<std::pair<size_t, size_t>> search(std::vector<std::pair<std::string, std::pair<size_t, size_t>>>& text, size_t patCount, size_t patLen);
+	private:
+		void deleteTrie(TNode* node);
+		void processLvl(TNode *node, size_t max);
+		void processNode(TNode *parent, TNode *node, std::string nodeSym);
+		TNode* root;
+	};
+\end{lstlisting}
+
+\section{Консоль}
+\begin{alltt}
+MacBook:solution vladislove$ ./solution 
+cat dog cat dog bird
+CAT dog CaT Dog Cat
+DOG bird CAT
+dog cat dog bird
+1, 3
+2, 3
+
+MacBook:solution vladislove$ ./solution 
+a b ? c d e ? ? a b
+a b c d e 
+a b c c d
+e 
+a
+b a b
+2, 1
+
+MacBook:solution vladislove$ ./solution 
+? ? ? ? ?       
+MAI eto ya
+MAI eto mi
+MAI eto lucshie ludi strani
+1, 1
+1, 2
+1, 3
+2, 1
+2, 2
+2, 3
+3, 1
+\end{alltt}
+\pagebreak
+
