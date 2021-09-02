@@ -6,4 +6,5 @@ report.f*
 report.log
 report.out
 report.s*
+ex*/report/
 a.out
